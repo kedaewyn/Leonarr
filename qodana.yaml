@@ -1,0 +1,41 @@
+####################################################################################################################
+# WARNING: Do not store sensitive information in this file, as its contents will be included in the Qodana report. #
+####################################################################################################################
+
+# Qodana project configuration.
+# Docs: https://www.jetbrains.com/help/qodana/qodana-yaml.html
+
+version: "1.0"
+
+# Pinned linter version for reproducible scans. Bump manually when you want
+# new checks from a newer Qodana release.
+# See https://hub.docker.com/r/jetbrains/qodana-js for available tags.
+linter: jetbrains/qodana-js:2025.3
+
+# Default profile — covers JS/ES syntax, unused imports, var/const hygiene,
+# async/await patterns, etc. Good baseline for a JS ESM project.
+profile:
+  name: qodana.recommended
+
+# Extra checks layered on top of the default profile.
+include:
+  # Scans npm dependencies for license compatibility issues.
+  - name: CheckDependencyLicenses
+
+# Directories Qodana should never touch. Without these, a scan picks up
+# thousands of vendored files and tooling noise.
+#   - node_modules: vendored deps, not our code
+#   - logs:         runtime artifacts
+#   - .github:      CI config, not source under analysis
+#   - .idea:        JetBrains project settings
+#   - dist:         build output (if any)
+#   - assets:       branding (logo.png)
+exclude:
+  - name: All
+    paths:
+      - node_modules
+      - logs
+      - .github
+      - .idea
+      - dist
+      - assets

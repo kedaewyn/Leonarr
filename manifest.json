@@ -1,0 +1,73 @@
+{
+  "id": "leonarr",
+  "name": "Leonarr",
+  "version": "0.1.0",
+  "apiVersion": "v1",
+  "description": "Discord bot bridging Oscarr: Plex login, media search and request from Discord.",
+  "author": "Keda",
+  "entry": "index.js",
+  "settings": [
+    {
+      "key": "botToken",
+      "label": "Discord bot token",
+      "type": "password",
+      "required": true
+    },
+    {
+      "key": "clientId",
+      "label": "Discord application (client) ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "guildId",
+      "label": "Guild ID (leave empty to register commands globally)",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "language",
+      "label": "Default bot language (fr / en)",
+      "type": "string",
+      "default": "fr"
+    },
+    {
+      "key": "requireLogin",
+      "label": "Require Plex login before /search and /request",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "logDir",
+      "label": "Log directory (absolute or relative to plugin root — empty = ./logs)",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "logLevel",
+      "label": "Log level (error / warn / info / debug)",
+      "type": "string",
+      "default": "info"
+    }
+  ],
+  "hooks": {
+    "routes": { "prefix": "/api/plugins/leonarr" },
+    "jobs": [
+      {
+        "key": "leonarr_notify_poll",
+        "label": "Leonarr — DM Discord users when their requested media becomes available",
+        "cron": "*/2 * * * *"
+      }
+    ],
+    "ui": [
+      {
+        "hookPoint": "admin.tabs",
+        "props": {
+          "label": "Leonarr",
+          "icon": "MessageSquare"
+        },
+        "order": 80
+      }
+    ]
+  }
+}

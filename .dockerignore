@@ -1,0 +1,33 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Local dev
+node_modules
+logs
+*.log
+.env
+.env.*
+
+# IDE / local tooling (also hidden from git via .git/info/exclude)
+.idea
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs / branding / tooling — not needed in the runtime image
+docs
+assets
+scripts
+*.md
+!README.md
+!README.en.md
+
+# Tests (not yet, but future-proof)
+coverage
+test
+tests
+*.test.js

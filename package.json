@@ -1,0 +1,19 @@
+{
+  "name": "leonarr",
+  "version": "0.1.0",
+  "description": "Discord bot plugin for Oscarr - Plex login, search and request media from Discord.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}
