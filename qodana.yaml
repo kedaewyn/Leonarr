@@ -1,0 +1,22 @@
+version: "1.0"
+
+# JavaScript/TypeScript linter. See https://hub.docker.com/r/jetbrains/qodana-js
+linter: jetbrains/qodana-js:latest
+
+profile:
+  name: qodana.recommended
+
+# Exclude directories that shouldn't be scanned.
+exclude:
+  - name: All
+    paths:
+      - node_modules
+      - logs
+      - .github
+      - .idea
+      - .claude
+      - dist
+
+# Fail the build only on High+ severity issues so cosmetic warnings don't
+# block PRs. Use `qodana scan --fail-threshold any` locally to be stricter.
+failThreshold: 50
