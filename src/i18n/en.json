@@ -18,7 +18,7 @@
 
   "search.autocomplete.hint": "Start typing at least 2 characters…",
   "search.submit.title": "Submit this request?",
-  "search.submit.title.available": "Already in your library — nothing to do.",
+  "search.submit.title.available": "Already in your library.",
   "search.submit.title.requested": "You already have an active request for this.",
   "search.submit.confirm": "Request",
   "search.result.none": "No result for **{{query}}**.",

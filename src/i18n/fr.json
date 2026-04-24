@@ -18,7 +18,7 @@
 
   "search.autocomplete.hint": "Tapez au moins 2 caractères…",
   "search.submit.title": "Envoyer cette demande ?",
-  "search.submit.title.available": "Déjà dans votre bibliothèque — rien à faire.",
+  "search.submit.title.available": "Déjà dans votre bibliothèque.",
   "search.submit.title.requested": "Vous avez déjà une demande active pour ce contenu.",
   "search.submit.confirm": "Demander",
   "search.result.none": "Aucun résultat pour **{{query}}**.",
