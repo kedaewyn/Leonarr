@@ -18,10 +18,9 @@
 
   "search.autocomplete.hint": "Start typing at least 2 characters…",
   "search.submit.title": "Submit this request?",
-  "search.submit.title.available": "Already in your library — request anyway?",
+  "search.submit.title.available": "Already in your library — nothing to do.",
   "search.submit.title.requested": "You already have an active request for this.",
   "search.submit.confirm": "Request",
-  "search.submit.confirm_anyway": "Request anyway",
   "search.submit.cancel": "Cancel",
   "search.submit.dismiss": "Dismiss",
   "search.result.none": "No result for **{{query}}**.",

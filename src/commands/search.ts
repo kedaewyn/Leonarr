@@ -149,10 +149,6 @@ export async function handle(
       titleLine = t('search.submit.title.available');
       builder.addComponents(
         new ButtonBuilder()
-          .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
-          .setLabel(t('search.submit.confirm_anyway'))
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
           .setCustomId('leonarr:cancel')
           .setLabel(t('search.submit.dismiss'))
           .setStyle(ButtonStyle.Primary),
