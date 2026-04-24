@@ -6,6 +6,7 @@
   "description": "Discord bridge for Oscarr — link your Discord account, search TMDB and submit requests via slash commands, get DMed when your media is ready.",
   "author": "Keda",
   "entry": "dist/index.js",
+  "frontend": "frontend/index.tsx",
   "engines": {
     "oscarr": ">=0.7.0-0 <1.0.0",
     "testedAgainst": ["0.7.0"]

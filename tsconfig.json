@@ -14,8 +14,10 @@
     "allowImportingTsExtensions": false,
     "noEmit": true,
     "isolatedModules": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*.ts", "manifest.json"],
+  "include": ["src/**/*.ts", "frontend/**/*.ts", "frontend/**/*.tsx", "manifest.json"],
   "exclude": ["node_modules", "dist"]
 }

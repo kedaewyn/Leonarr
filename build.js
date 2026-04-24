@@ -1,16 +1,19 @@
 import { build, context } from 'esbuild';
 import { readFileSync } from 'fs';
 
-/** Bundles src/index.js → dist/index.js for Oscarr's plugin loader. discord.js and its
- *  transitive native deps (@discordjs/opus, zlib-sync, …) are kept external so the loader
- *  resolves them from the plugin's own node_modules at runtime — esbuild can't inline native
- *  modules anyway. @oscarr/shared type-only imports get stripped by the ESM bundler. */
-const watch = process.argv.includes('--watch');
+/** Two bundles: backend (src/index.ts → dist/index.js, platform=node) and admin-tab
+ *  frontend (frontend/index.tsx → dist/frontend/index.js, platform=browser). Oscarr's
+ *  loader serves `dist/frontend/*` back to the admin UI via `/api/plugins/:id/frontend/*`
+ *  and resolves `react` / `react-dom` / `react/jsx-runtime` from the host via importmap —
+ *  that's why those (and `@oscarr/sdk`) are marked external here. */
 
+const watch = process.argv.includes('--watch');
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
+// ── Backend bundle ──────────────────────────────────────────────────
+
 /** @type {import('esbuild').BuildOptions} */
-const options = {
+const backendOptions = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   platform: 'node',
@@ -37,10 +40,37 @@ const options = {
   logLevel: 'info',
 };
 
+// ── Frontend bundle (admin tab) ─────────────────────────────────────
+
+/** @type {import('esbuild').BuildOptions} */
+const frontendOptions = {
+  entryPoints: ['frontend/index.tsx'],
+  bundle: true,
+  platform: 'browser',
+  target: ['es2022'],
+  format: 'esm',
+  outfile: 'dist/frontend/index.js',
+  jsx: 'automatic',
+  jsxImportSource: 'react',
+  external: [
+    // These come from Oscarr's importmap (packages/frontend/public/_plugin-runtime/).
+    // Bundling would re-inline a second React copy and trigger "Invalid hook call".
+    'react',
+    'react-dom',
+    'react/jsx-runtime',
+    '@oscarr/sdk',
+  ],
+  minify: !watch,
+  sourcemap: watch ? 'inline' : 'linked',
+  logLevel: 'info',
+};
+
 if (watch) {
-  const ctx = await context(options);
-  await ctx.watch();
-  console.log(`[leonarr ${pkg.version}] watching src/…`);
+  const [backCtx, frontCtx] = await Promise.all([context(backendOptions), context(frontendOptions)]);
+  await Promise.all([backCtx.watch(), frontCtx.watch()]);
+  console.log(`[leonarr ${pkg.version}] watching src/ + frontend/ …`);
 } else {
-  await build(options);
+  await build(backendOptions);
+  await build(frontendOptions);
+  console.log(`[leonarr ${pkg.version}] built dist/index.js + dist/frontend/index.js`);
 }

@@ -11,12 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "discord.js": "^14.18.0"
+    "discord.js": "^14.18.0",
+    "lucide-react": "^0.468.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/react": "^19.0.0",
     "esbuild": "^0.25.9",
     "fastify": "^5.8.5",
+    "react": "^19.0.0",
     "typescript": "^6.0.2"
   }
 }
