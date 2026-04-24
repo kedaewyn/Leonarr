@@ -1,4 +1,4 @@
-import type { Client as DiscordClient } from 'discord.js';
+import { EmbedBuilder, type Client as DiscordClient } from 'discord.js';
 import type { Ctx, PluginUserNotificationCreatedV1, PluginMediaAvailableV1 } from '../types.js';
 
 /** Event-bus subscribers — replaces the old cron-polling pattern.
@@ -17,6 +17,23 @@ import type { Ctx, PluginUserNotificationCreatedV1, PluginMediaAvailableV1 } fro
  *  from onDisable, so subscriber handlers are detached when the plugin is disabled or
  *  unloaded.
  */
+
+/** Well-known metadata keys Oscarr's safeUserNotify callers populate. We pull a few of
+ *  these to build a richer Discord embed without firing a second TMDB request. */
+interface KnownMetadata {
+  mediaId?: number;
+  tmdbId?: number;
+  mediaType?: 'movie' | 'tv';
+  posterPath?: string | null;
+}
+
+const TYPE_EMOJI: Record<string, string> = {
+  request_approved: '✅',
+  request_declined: '❌',
+  media_available: '🎬',
+  support_reply: '💬',
+};
+
 export function installEventSubscribers(discordClient: DiscordClient, ctx: Ctx): () => void {
   const onUserNotification = async (raw: unknown): Promise<void> => {
     const ev = raw as PluginUserNotificationCreatedV1 | undefined;
@@ -31,14 +48,26 @@ export function installEventSubscribers(discordClient: DiscordClient, ctx: Ctx):
       const dmUser = await discordClient.users.fetch(discordId).catch(() => null);
       if (!dmUser) return; // Discord id invalid or user blocked DMs
 
-      // Keep the DM content compact — Oscarr's notification already carries a translated
-      // title + message via the v1.1 titleText/messageText fields. Fall back to the raw
-      // title/message when the host predates the translation pass (older 0.7.0-dev
-      // builds), so a freshly upgraded plugin against an older host still works.
-      const titleLine = ev.titleText ?? ev.title;
-      const messageLine = ev.messageText ?? ev.message;
-      const body = messageLine ? `${titleLine}\n${messageLine}` : titleLine;
-      await dmUser.send({ content: body }).catch((err: unknown) => {
+      const meta = (ev.metadata ?? {}) as KnownMetadata;
+      const emoji = TYPE_EMOJI[ev.type] ?? '🔔';
+
+      // titleText is the pre-translated title (often the raw media title — same value
+      // also appears interpolated inside messageText). Build a clean embed: the message
+      // becomes the description (it already contains the title), the type becomes the
+      // embed title with an emoji marker, and we hang the poster off the thumbnail when
+      // metadata.posterPath is present (forwarded by safeUserNotify callers).
+      const description = ev.messageText ?? ev.message;
+      const embed = new EmbedBuilder()
+        .setTitle(`${emoji} ${ev.titleText ?? ev.title}`)
+        .setDescription(description);
+      if (meta.posterPath) {
+        embed.setThumbnail(`https://image.tmdb.org/t/p/w185${meta.posterPath}`);
+      }
+      if (meta.tmdbId && meta.mediaType) {
+        embed.setURL(`https://www.themoviedb.org/${meta.mediaType}/${meta.tmdbId}`);
+      }
+
+      await dmUser.send({ embeds: [embed] }).catch((err: unknown) => {
         ctx.log.debug({ err, discordId, type: ev.type }, 'DM delivery failed (user may have DMs disabled)');
       });
     } catch (err) {
@@ -57,9 +86,14 @@ export function installEventSubscribers(discordClient: DiscordClient, ctx: Ctx):
       const channel = await discordClient.channels.fetch(channelId).catch(() => null);
       if (!channel || !channel.isTextBased() || !('send' in channel)) return;
 
-      const url = `https://www.themoviedb.org/${ev.mediaType}/${ev.tmdbId}`;
       const kindEmoji = ev.mediaType === 'movie' ? '🎬' : '📺';
-      await channel.send({ content: `📢 **${ev.title}** ${kindEmoji} is available! <${url}>` })
+      const embed = new EmbedBuilder()
+        .setTitle(`📢 ${kindEmoji} ${ev.title}`)
+        .setDescription('is now available')
+        .setURL(`https://www.themoviedb.org/${ev.mediaType}/${ev.tmdbId}`);
+      if (ev.posterPath) embed.setThumbnail(`https://image.tmdb.org/t/p/w185${ev.posterPath}`);
+
+      await channel.send({ embeds: [embed] })
         .catch((err: unknown) => {
           ctx.log.warn({ err, channelId, mediaId: ev.mediaId }, 'announce channel post failed');
         });
