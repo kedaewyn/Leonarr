@@ -28,7 +28,6 @@ the `UserProvider` rows).
 | `botToken` | password | yes | Discord bot token (applications → bot → token). |
 | `clientId` | string | yes | Discord application id. |
 | `guildId` | string | no | Guild id to scope slash commands. Empty = global registration (propagates within an hour). |
-| `oauthStateSecret` | password | yes for `/link` | Random ≥16-char string used to HMAC-sign the OAuth `state` param. |
 | `announceChannelId` | string | no | Channel id to post `media.available` announcements into. Empty = DMs only. |
 
 Configured via the admin **Plugins → Leonarr** tab after install.

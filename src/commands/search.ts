@@ -26,9 +26,10 @@ import type { Ctx } from '../types.js';
 const MAX_RESULTS = 10;
 const ENCODED_PATTERN = /^(movie|tv):(\d+)$/;
 
+// Hardcoded slug — see comment in commands/link.ts. Dispatch keys against this literal.
 export function buildCommand(t: TFn): RESTPostAPIChatInputApplicationCommandsJSONBody {
   return new SlashCommandBuilder()
-    .setName(t('cmd.search.name'))
+    .setName('search')
     .setDescription(t('cmd.search.description'))
     .addStringOption((opt) => opt
       .setName('query')

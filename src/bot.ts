@@ -90,6 +90,30 @@ export function createBot(): Bot {
       ctx.log.info({ user: client?.user?.tag }, 'Leonarr Discord bot ready');
     });
 
+    // Gateway error surfacing. Without these, a revoked token / disallowed intents /
+    // network drop leaves the client present but dead, and `isRunning()` keeps lying to
+    // /status — admin UI pill stays green forever and Start stays disabled.
+    //   - `shardError`: transient, discord.js handles reconnect itself; log + carry on.
+    //   - `invalidated`: fatal (token revoked, duplicate login). Tear down so the admin
+    //     can fix the token and click Start again.
+    //   - `shardDisconnect` close codes 4004 (auth failed) / 4014 (disallowed intents):
+    //     same — unrecoverable without admin intervention.
+    client.on('shardError', (err) => {
+      ctx.log.warn({ err }, 'Leonarr Discord shard error (will attempt reconnect)');
+    });
+    client.on('invalidated', () => {
+      ctx.log.error('Leonarr Discord session invalidated (token revoked or duplicate login) — stopping bot');
+      void stop(ctx);
+    });
+    client.on('shardDisconnect', (closeEvent, shardId) => {
+      if (closeEvent?.code === 4004 || closeEvent?.code === 4014) {
+        ctx.log.error({ shardId, code: closeEvent.code, reason: closeEvent.reason }, 'Leonarr Discord auth/intent failure — stopping bot');
+        void stop(ctx);
+      } else {
+        ctx.log.debug({ shardId, code: closeEvent?.code }, 'Leonarr Discord shard disconnected (will attempt reconnect)');
+      }
+    });
+
     await client.login(botToken);
 
     // Once we have a live Discord client, wire up the Oscarr event bus so notifications

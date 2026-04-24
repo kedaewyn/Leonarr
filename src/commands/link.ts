@@ -24,9 +24,13 @@ import type { Ctx } from '../types.js';
  *  stored server-side (providers/discord/index.ts), so a plugin-side HMAC would be dead
  *  weight. The flow's authenticity is anchored on Oscarr's session cookie, which is the
  *  right primitive — we can't outdo that from a Discord bot. */
+// Command slug is hardcoded — Discord doesn't translate command *names* across locales,
+// only descriptions. Putting the name in the i18n bundle (an early version of this code
+// did) was a footgun: a translator editing fr.json to "lier" would silently break dispatch
+// in bot.ts, which matches `interaction.commandName` against the literal 'link'.
 export function buildCommand(t: TFn): RESTPostAPIChatInputApplicationCommandsJSONBody {
   return new SlashCommandBuilder()
-    .setName(t('cmd.link.name'))
+    .setName('link')
     .setDescription(t('cmd.link.description'))
     .toJSON();
 }

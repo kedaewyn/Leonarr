@@ -26,9 +26,10 @@ interface QueueSnapshot {
   state: string;
 }
 
+// Hardcoded slug — see comment in commands/link.ts. Dispatch keys against this literal.
 export function buildCommand(t: TFn): RESTPostAPIChatInputApplicationCommandsJSONBody {
   return new SlashCommandBuilder()
-    .setName(t('cmd.status.name'))
+    .setName('status')
     .setDescription(t('cmd.status.description'))
     .toJSON();
 }

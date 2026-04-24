@@ -1,18 +1,14 @@
 {
-  "cmd.link.name": "link",
   "cmd.link.description": "Link your Discord account to your Oscarr account.",
-  "cmd.search.name": "search",
   "cmd.search.description": "Search for a movie or TV show and submit a request.",
   "cmd.search.query": "What are you looking for?",
-  "cmd.status.name": "status",
   "cmd.status.description": "See your pending Oscarr requests and download progress.",
-  "cmd.help.name": "help",
   "cmd.help.description": "Show the list of Leonarr commands.",
 
   "link.prompt": "Click the link below to connect your Discord account to Oscarr. The link is personal and expires in 10 minutes.",
   "link.button": "Link my account",
   "link.already": "Your Discord account is already linked to Oscarr ({{name}}).",
-  "link.misconfigured": "Leonarr isn't finished installing — the admin needs to set `oauthStateSecret` in the plugin settings.",
+  "link.misconfigured": "Leonarr can't build the link yet — the admin needs to set the public site URL in Oscarr's general settings.",
 
   "not_linked": "Your Discord account isn't linked yet. Run /link first.",
 
@@ -22,7 +18,6 @@
   "search.submit.title.requested": "You already have an active request for this.",
   "search.submit.confirm": "Request",
   "search.result.none": "No result for **{{query}}**.",
-  "search.result.tmdb_year": "{{year}}",
 
   "request.created.pending": "Requested **{{title}}** — your admin will review it.",
   "request.created.approved": "Requested **{{title}}** — auto-approved, sending to the service now.",
