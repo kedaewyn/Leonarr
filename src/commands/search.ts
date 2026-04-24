@@ -103,13 +103,24 @@ export async function handle(
 
   await interaction.deferReply({ ephemeral: true });
   try {
-    const details = mediaType === 'movie'
-      ? await ctx.tmdb.movie(tmdbId, { lang })
-      : await ctx.tmdb.tv(tmdbId, { lang });
+    // Pull TMDB details + the user's Oscarr-side state for this title in parallel — they're
+    // independent calls and either can be the latency floor of the reply. batchStatus gives
+    // both the media's overall library status and *this user's* personal request state, so
+    // we can branch the UX three ways below from one round-trip.
+    const [details, statusMap] = await Promise.all([
+      mediaType === 'movie'
+        ? ctx.tmdb.movie(tmdbId, { lang })
+        : ctx.tmdb.tv(tmdbId, { lang }),
+      ctx.media.batchStatus([{ tmdbId, mediaType }], user.id),
+    ]);
     const title = (('title' in details ? details.title : details.name) as string | undefined) || 'Untitled';
     const year = ((('release_date' in details ? details.release_date : details.first_air_date) as string | undefined) || '').slice(0, 4);
     const posterPath = details.poster_path;
     const overview = (details.overview as string | undefined) || '—';
+
+    const state = statusMap[`${mediaType}:${tmdbId}`];
+    const isAvailable = state?.status === 'available';
+    const userHasRequest = state?.userHasActiveRequest === true;
 
     const embed = new EmbedBuilder()
       .setTitle(year ? `${title} (${year})` : title)
@@ -117,18 +128,50 @@ export async function handle(
       .setURL(`https://www.themoviedb.org/${mediaType}/${tmdbId}`);
     if (posterPath) embed.setThumbnail(`https://image.tmdb.org/t/p/w342${posterPath}`);
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
-        .setLabel(t('search.submit.confirm'))
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('leonarr:cancel')
-        .setLabel(t('search.submit.cancel'))
-        .setStyle(ButtonStyle.Secondary),
-    );
+    // Three flavours of action row:
+    //   - already requested by this user → just a Dismiss button, no submit (avoids dupes
+    //     hitting the DUPLICATE error code for nothing). User can check /status for state.
+    //   - already available in the library → Dismiss + a softer "Request anyway" button for
+    //     the legit quality-upgrade case (Oscarr's pipeline allows it).
+    //   - default → Request + Cancel.
+    const builder = new ActionRowBuilder<ButtonBuilder>();
+    let titleLine: string;
 
-    await interaction.editReply({ content: t('search.submit.title'), embeds: [embed], components: [row] });
+    if (userHasRequest) {
+      titleLine = t('search.submit.title.requested');
+      builder.addComponents(
+        new ButtonBuilder()
+          .setCustomId('leonarr:cancel')
+          .setLabel(t('search.submit.dismiss'))
+          .setStyle(ButtonStyle.Secondary),
+      );
+    } else if (isAvailable) {
+      titleLine = t('search.submit.title.available');
+      builder.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
+          .setLabel(t('search.submit.confirm_anyway'))
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('leonarr:cancel')
+          .setLabel(t('search.submit.dismiss'))
+          .setStyle(ButtonStyle.Primary),
+      );
+    } else {
+      titleLine = t('search.submit.title');
+      builder.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
+          .setLabel(t('search.submit.confirm'))
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('leonarr:cancel')
+          .setLabel(t('search.submit.cancel'))
+          .setStyle(ButtonStyle.Secondary),
+      );
+    }
+
+    await interaction.editReply({ content: titleLine, embeds: [embed], components: [builder] });
   } catch (err) {
     ctx.log.warn({ err, tmdbId, mediaType }, 'TMDB details fetch failed');
     await interaction.editReply({ content: t('request.error.generic', { code: 'TMDB_FETCH' }) });

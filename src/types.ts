@@ -158,6 +158,18 @@ export interface Ctx {
     tv(tmdbId: number, options?: { lang?: string }): Promise<PluginTmdbTv>;
   };
 
+  media: {
+    /** Bulk lookup of Oscarr-side state for N TMDB ids. When `userId` is passed, also
+     *  reports the user's personal request status per item. Hard-capped at 500 items by
+     *  the host. */
+    batchStatus(
+      items: Array<{ tmdbId: number; mediaType: 'movie' | 'tv' }>,
+      userId?: number,
+    ): Promise<Record<PluginMediaBatchKey, PluginMediaBatchStatus>>;
+    /** Single-media lookup by Oscarr id. Null when the media row doesn't exist. */
+    getById(mediaId: number): Promise<PluginMedia | null>;
+  };
+
   requests: {
     listForUser(
       userId: number,
