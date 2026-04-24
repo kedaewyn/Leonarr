@@ -18,7 +18,8 @@
     "tmdb:read",
     "requests:read",
     "requests:write",
-    "events"
+    "events",
+    "permissions"
   ],
   "capabilityReasons": {
     "settings:plugin": "Stores the bot token, Discord client id, optional guild scoping and the HMAC secret used to sign Discord OAuth state.",
@@ -27,7 +28,8 @@
     "tmdb:read":       "/search autocomplete queries TMDB through Oscarr's cached proxy — no plugin-side API key required.",
     "requests:read":   "/status reads the user's requests and batched media progress to show queue info.",
     "requests:write":  "/search → submit creates a request as the linked Oscarr user, through the exact pipeline POST /api/requests uses.",
-    "events":          "Subscribes to user.notification.created + media.available so DMs and channel posts fire without cron polling."
+    "events":          "Subscribes to user.notification.created + media.available so DMs and channel posts fire without cron polling.",
+    "permissions":     "Registers the 'leonarr.restart' permission + RBAC rule for POST /api/plugins/leonarr/restart so only admins (or roles explicitly granted) can bounce the Discord bot."
   },
   "settings": [
     { "key": "botToken", "label": "Discord bot token", "type": "password" },
