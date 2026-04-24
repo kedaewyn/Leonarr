@@ -128,46 +128,33 @@ export async function handle(
       .setURL(`https://www.themoviedb.org/${mediaType}/${tmdbId}`);
     if (posterPath) embed.setThumbnail(`https://image.tmdb.org/t/p/w342${posterPath}`);
 
-    // Three flavours of action row:
-    //   - already requested by this user → just a Dismiss button, no submit (avoids dupes
-    //     hitting the DUPLICATE error code for nothing). User can check /status for state.
-    //   - already available in the library → Dismiss + a softer "Request anyway" button for
-    //     the legit quality-upgrade case (Oscarr's pipeline allows it).
-    //   - default → Request + Cancel.
-    const builder = new ActionRowBuilder<ButtonBuilder>();
+    // Three flavours of reply. We don't ship our own Dismiss/Cancel button because Discord
+    // auto-renders a "Dismiss message" affordance on every ephemeral reply — adding our own
+    // would just clutter the UI without doing anything Discord doesn't already do natively.
+    //   - already requested by this user → no buttons (avoids redundant submit attempts hitting
+    //     the DUPLICATE error code; user can check /status for live state).
+    //   - already available in the library → no buttons.
+    //   - default → only the Request button.
     let titleLine: string;
+    const components: ActionRowBuilder<ButtonBuilder>[] = [];
 
     if (userHasRequest) {
       titleLine = t('search.submit.title.requested');
-      builder.addComponents(
-        new ButtonBuilder()
-          .setCustomId('leonarr:cancel')
-          .setLabel(t('search.submit.dismiss'))
-          .setStyle(ButtonStyle.Secondary),
-      );
     } else if (isAvailable) {
       titleLine = t('search.submit.title.available');
-      builder.addComponents(
-        new ButtonBuilder()
-          .setCustomId('leonarr:cancel')
-          .setLabel(t('search.submit.dismiss'))
-          .setStyle(ButtonStyle.Primary),
-      );
     } else {
       titleLine = t('search.submit.title');
-      builder.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
-          .setLabel(t('search.submit.confirm'))
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('leonarr:cancel')
-          .setLabel(t('search.submit.cancel'))
-          .setStyle(ButtonStyle.Secondary),
+      components.push(
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`leonarr:submit:${mediaType}:${tmdbId}`)
+            .setLabel(t('search.submit.confirm'))
+            .setStyle(ButtonStyle.Primary),
+        ),
       );
     }
 
-    await interaction.editReply({ content: titleLine, embeds: [embed], components: [builder] });
+    await interaction.editReply({ content: titleLine, embeds: [embed], components });
   } catch (err) {
     ctx.log.warn({ err, tmdbId, mediaType }, 'TMDB details fetch failed');
     await interaction.editReply({ content: t('request.error.generic', { code: 'TMDB_FETCH' }) });
@@ -223,6 +210,3 @@ export async function handleSubmitButton(
   await interaction.editReply({ content, embeds: [], components: [] });
 }
 
-export async function handleCancelButton(interaction: ButtonInteraction): Promise<void> {
-  await interaction.update({ content: '❌', embeds: [], components: [] });
-}

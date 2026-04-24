@@ -141,6 +141,5 @@ async function dispatch(interaction: Interaction, ctx: Ctx): Promise<void> {
   if (interaction.isButton()) {
     if (!interaction.customId.startsWith('leonarr:')) return;
     if (interaction.customId.startsWith('leonarr:submit:')) return searchCmd.handleSubmitButton(interaction, ctx);
-    if (interaction.customId === 'leonarr:cancel') return searchCmd.handleCancelButton(interaction);
   }
 }
