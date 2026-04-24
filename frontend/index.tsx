@@ -59,10 +59,17 @@ export default function LeonarrAdmin() {
 
   const refreshSettings = useCallback(async () => {
     try {
-      const s = await api('/api/plugins/leonarr/settings') as Settings;
-      // Normalise undefined/null to empty string so inputs stay controlled.
+      // Oscarr's /:id/settings returns { schema, values } (engine.ts:getSettings) — the
+      // schema is the manifest.settings array, the values are the saved key/value dict.
+      // We have our own UI for the schema (SETTING_FIELDS), so we only consume `values`.
+      const payload = await api('/api/plugins/leonarr/settings') as { schema: unknown; values: Record<string, unknown> };
+      const values = payload.values ?? {};
+      // Normalise undefined/null/non-string to empty string so inputs stay controlled.
       const normalised: Settings = {};
-      for (const f of SETTING_FIELDS) normalised[f.key] = typeof s[f.key] === 'string' ? s[f.key] : '';
+      for (const f of SETTING_FIELDS) {
+        const v = values[f.key];
+        normalised[f.key] = typeof v === 'string' ? v : '';
+      }
       setSettings(normalised);
       setOriginalSettings(normalised);
     } catch (err) {
