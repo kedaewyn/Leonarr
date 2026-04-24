@@ -1,0 +1,49 @@
+{
+  "cmd.link.name": "link",
+  "cmd.link.description": "Lier votre compte Discord à votre compte Oscarr.",
+  "cmd.search.name": "search",
+  "cmd.search.description": "Chercher un film ou une série et envoyer une demande.",
+  "cmd.search.query": "Ce que vous cherchez ?",
+  "cmd.status.name": "status",
+  "cmd.status.description": "Voir vos demandes Oscarr en cours et la progression des téléchargements.",
+  "cmd.help.name": "help",
+  "cmd.help.description": "Afficher la liste des commandes Leonarr.",
+
+  "link.prompt": "Cliquez sur le lien ci-dessous pour connecter votre compte Discord à Oscarr. Le lien est personnel et expire dans 10 minutes.",
+  "link.button": "Lier mon compte",
+  "link.already": "Votre compte Discord est déjà lié à Oscarr ({{name}}).",
+  "link.misconfigured": "Leonarr n'est pas encore configuré — l'admin doit renseigner `oauthStateSecret` dans les paramètres du plugin.",
+
+  "not_linked": "Votre compte Discord n'est pas encore lié. Lancez /link d'abord.",
+
+  "search.autocomplete.hint": "Tapez au moins 2 caractères…",
+  "search.submit.title": "Envoyer cette demande ?",
+  "search.submit.confirm": "Demander",
+  "search.submit.cancel": "Annuler",
+  "search.result.none": "Aucun résultat pour **{{query}}**.",
+  "search.result.tmdb_year": "{{year}}",
+
+  "request.created.pending": "Demande envoyée pour **{{title}}** — votre admin va la valider.",
+  "request.created.approved": "Demande envoyée pour **{{title}}** — auto-approuvée, envoi au service en cours.",
+  "request.created.send_failed": "Demande enregistrée pour **{{title}}** — mais Oscarr n'a pas pu joindre le service *arr. Un admin réessaiera.",
+  "request.error.duplicate": "Vous avez déjà une demande active pour **{{title}}**.",
+  "request.error.blacklisted": "**{{title}}** a été bloqué par un administrateur.",
+  "request.error.blocked_by_guard": "Votre demande a été bloquée : {{reason}}",
+  "request.error.invalid": "Problème avec cette demande : {{reason}}",
+  "request.error.quality": "Vous n'avez pas accès au profil de qualité sélectionné.",
+  "request.error.generic": "Un problème est survenu ({{code}}). Réessayez dans une minute.",
+
+  "status.empty": "Vous n'avez aucune demande Oscarr pour le moment.",
+  "status.heading": "Vos dernières demandes",
+  "status.status.pending": "En attente",
+  "status.status.approved": "Approuvée",
+  "status.status.searching": "Recherche en cours",
+  "status.status.processing": "En traitement",
+  "status.status.available": "Disponible",
+  "status.status.failed": "Échec",
+  "status.status.rejected": "Refusée",
+  "status.queue.progress": "{{percent}}% — {{state}}",
+
+  "help.title": "Commandes Leonarr",
+  "help.footer": "Oscarr vous regarde. Soyez patients avec le robot, aussi."
+}
