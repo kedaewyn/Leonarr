@@ -7,7 +7,7 @@
   "author": "Keda",
   "entry": "dist/index.js",
   "engines": {
-    "oscarr": ">=0.7.0 <1.0.0",
+    "oscarr": ">=0.7.0-0 <1.0.0",
     "testedAgainst": ["0.7.0"]
   },
   "services": ["radarr", "sonarr"],
