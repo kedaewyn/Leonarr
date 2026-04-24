@@ -84,8 +84,13 @@ export interface PluginUserNotificationCreatedV1 {
   v: 1;
   userId: number;
   type: string;
+  /** Raw value as stored — may be an i18n key (notifications.msg.*) or a literal title.
+   *  Prefer `titleText` / `messageText` for display. */
   title: string;
   message: string;
+  /** Pre-translated text resolved against the instance language at emit time. */
+  titleText?: string;
+  messageText?: string;
   metadata: Record<string, unknown>;
   createdAt: string;
 }

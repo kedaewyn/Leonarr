@@ -32,8 +32,12 @@ export function installEventSubscribers(discordClient: DiscordClient, ctx: Ctx):
       if (!dmUser) return; // Discord id invalid or user blocked DMs
 
       // Keep the DM content compact — Oscarr's notification already carries a translated
-      // title + message. Metadata might include posterPath/tmdbId for richer embeds later.
-      const body = ev.message ? `${ev.title}\n${ev.message}` : ev.title;
+      // title + message via the v1.1 titleText/messageText fields. Fall back to the raw
+      // title/message when the host predates the translation pass (older 0.7.0-dev
+      // builds), so a freshly upgraded plugin against an older host still works.
+      const titleLine = ev.titleText ?? ev.title;
+      const messageLine = ev.messageText ?? ev.message;
+      const body = messageLine ? `${titleLine}\n${messageLine}` : titleLine;
       await dmUser.send({ content: body }).catch((err: unknown) => {
         ctx.log.debug({ err, discordId, type: ev.type }, 'DM delivery failed (user may have DMs disabled)');
       });
