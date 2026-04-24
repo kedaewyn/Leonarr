@@ -36,7 +36,6 @@
     { "key": "botToken", "label": "Discord bot token", "type": "password" },
     { "key": "clientId", "label": "Discord application (client) id", "type": "string" },
     { "key": "guildId", "label": "Guild id to scope slash commands (empty = register globally)", "type": "string" },
-    { "key": "oauthStateSecret", "label": "HMAC secret for Discord OAuth state (generate a random string)", "type": "password" },
     { "key": "announceChannelId", "label": "Channel id for media.available broadcasts (empty = DM only)", "type": "string" }
   ],
   "hooks": {

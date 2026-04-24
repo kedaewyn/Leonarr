@@ -24,7 +24,6 @@ const SETTING_FIELDS: Array<{
   { key: 'botToken',          label: 'Discord bot token',       type: 'password', required: true, hint: 'Applications → Bot → Token on the Discord developer portal.' },
   { key: 'clientId',          label: 'Discord application id',  type: 'text',     required: true, hint: 'Applications → General information → Application ID.' },
   { key: 'guildId',           label: 'Guild id (optional)',     type: 'text',                     hint: 'Restrict slash commands to this guild for faster propagation. Leave empty to register globally.' },
-  { key: 'oauthStateSecret',  label: 'OAuth state HMAC secret', type: 'password',                 hint: 'Random ≥16-char string. Signs the /link deep-link so a third party cannot forge it. Generate with: openssl rand -base64 32' },
   { key: 'announceChannelId', label: 'Announce channel id',     type: 'text',                     hint: 'Channel id the bot posts "media available" broadcasts to. Empty = DMs only.' },
 ];
 
