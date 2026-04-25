@@ -1,13 +1,13 @@
 name: CI
 
-# Fast feedback loop for pull requests:
-#   - Node syntax check on every JS file
-#   - Docker image build (no push)
-#   - Trivy scan on the freshly built image
+# Fast feedback loop on PRs:
+#   - Node syntax check on every JS file (catches obvious breakage in unbundled scripts)
+#   - typecheck (tsc --noEmit) on src/ + frontend/
+#   - Production build (esbuild backend + esbuild frontend + Tailwind CSS)
 #
-# The release pipeline (qodana + multi-arch build + push + trivy) lives in
-# release.yml and only runs on push to main / tag v*. This workflow exists
-# to catch obvious breakage on PRs without requiring a full release round.
+# The release pipeline (qodana + tarball asset upload) lives in release.yml and
+# only runs on push to main / tag v*. This workflow exists to catch obvious
+# breakage on PRs without producing a release artefact.
 
 on:
   pull_request:
@@ -18,21 +18,21 @@ permissions:
   security-events: write
 
 jobs:
-  lint:
-    name: Node syntax check
+  build:
+    name: Lint, typecheck, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install deps
         run: npm ci --no-audit --no-fund
 
-      - name: Syntax-check every JS file
+      - name: Syntax-check every plain JS file
         run: |
           set -e
           failed=0
@@ -40,42 +40,19 @@ jobs:
             node --check "$f" || failed=1
           done < <(find . -type f -name '*.js' \
             -not -path './node_modules/*' \
-            -not -path './logs/*' \
+            -not -path './dist/*' \
             -not -path './.git/*' \
             -print0)
           exit $failed
 
-  docker-build:
-    name: Docker build & Trivy scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Build
+        run: npm run build
 
-      - name: Build image (no push)
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: .
-          load: true
-          tags: leonarr:pr
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # master
-        with:
-          image-ref: leonarr:pr
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: '0'
-
-      - name: Upload Trivy SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
-          category: trivy-pr
+      - name: Verify build artefacts exist
+        run: |
+          test -f dist/index.js
+          test -f dist/frontend/index.js
+          test -f dist/frontend/index.css

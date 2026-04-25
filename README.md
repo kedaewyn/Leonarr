@@ -55,12 +55,12 @@ ln -s /opt/leonarr /chemin/vers/Oscarr/packages/plugins/leonarr
 
 En prod, deux options :
 
-- Installation hot depuis l'admin Oscarr → onglet **Plugins → Discover / Install** : collez l'URL d'une release GitHub, l'admin télécharge la tarball, charge le plugin et monte ses routes sans redémarrer le conteneur. Le `dist/` doit déjà être présent dans la release.
-- Installation manuelle : déposez le repo cloné (avec `dist/` buildé) dans le dossier scanné par Oscarr, puis redémarrez le service une fois pour que le plugin engine le découvre.
+- **Install from URL** depuis l'admin Oscarr (Admin → Plugins → Install from URL) : collez l'URL de la tarball publiée par le workflow `release.yml` (asset GitHub Release `leonarr-x.y.z.tar.gz`). Oscarr télécharge, valide le manifest, dépose le contenu dans `packages/plugins/leonarr/` et hot-load le plugin sans redémarrer le conteneur.
+- Installation manuelle : décompressez la tarball dans le dossier scanné par Oscarr, ou clonez ce repo et lancez `npm run build` localement, puis redémarrez le service une fois pour que le plugin engine découvre le plugin.
 
 ### 3. Relancer Oscarr
 
-Au démarrage, le plugin engine découvre `leonarr`, charge `manifest.json`, appelle `register()` et log `[PluginEngine] Loaded "leonarr" v0.2.0`. Le client Discord reste inactif tant que les settings ne sont pas remplis.
+Au démarrage, le plugin engine découvre `leonarr`, charge `manifest.json`, appelle `register()` et log `[PluginEngine] Loaded "leonarr" v0.1.1`. Le client Discord reste inactif tant que les settings ne sont pas remplis.
 
 ### 4. Configurer dans l'admin
 
@@ -77,7 +77,7 @@ Ouvrez Oscarr → Admin → Plugins → Leonarr. L'onglet ressemble aux autres t
 | `guildId` | non | Enregistre les commandes sur un seul serveur avec propagation instantanée. Vide = global, jusqu'à 1 h de propagation. |
 | `announceChannelId` | non | ID du canal pour les annonces `media.available`. Vide = DMs uniquement. |
 
-Les boutons et leurs routes sous-jacentes (`POST /api/plugins/leonarr/start|stop|restart`) sont gardés par la permission `leonarr.restart`, enregistrée au load et accordée aux admins par défaut. Vous pouvez la déléguer à un autre rôle pour avoir un opérateur de bot non-admin.
+Les boutons et leurs routes sous-jacentes (`POST /api/plugins/leonarr/start|stop|restart`) sont gardés par la permission `leonarr.control`, enregistrée au load et accordée aux admins par défaut. Vous pouvez la déléguer à un autre rôle pour avoir un opérateur de bot non-admin.
 
 Restart est l'action à utiliser après un changement de settings : il bounce la gateway Discord et ré-enregistre les slash commands contre la nouvelle config.
 
@@ -134,9 +134,8 @@ leonarr/
 │   ├── index.css              # Sources Tailwind du plugin
 │   └── oscarr-sdk.d.ts        # Types du SDK frontend host
 └── src/
-    ├── index.ts               # register(ctx) — onEnable/onDisable + routes /status, /start, /stop, /restart
+    ├── index.ts               # register(ctx) — onInstall/onEnable/onDisable + routes /status, /start, /stop, /restart
     ├── bot.ts                 # Lifecycle client Discord (start/stop/isRunning), routing events
-    ├── backend.js             # (legacy) — peut disparaître sur les futures versions ctx-v1
     ├── types.ts               # Types miroir du PluginContext v1.1 d'Oscarr
     ├── commands/
     │   ├── link.ts            # /link
@@ -165,6 +164,17 @@ Dans `manifest.json` :
 
 Chaque capacité a une justification d'une ligne dans `manifest.capabilityReasons`, affichée à l'admin lors de l'install ou de l'activation.
 
+## Cycle de vie
+
+`register(ctx)` retourne quatre hooks que le plugin engine appelle dans cet ordre :
+
+- `onInstall(ctx)` — une seule fois, à la toute première découverte du plugin (flagué via `PluginState.onInstallRan` côté Oscarr). Leonarr l'utilise pour logguer le message « fill the settings, then click Start » dans les logs admin.
+- `onEnable(ctx)` — à chaque activation du plugin via l'admin. Le client Discord se connecte ici, pas au load.
+- `onDisable(ctx)` — à la désactivation. Le client Discord est détruit, les souscriptions d'event nettoyées.
+- `registerRoutes(app, ctx)` — au load et à chaque ré-activation. Y sont déclarés `leonarr.control` (`registerPluginPermission`), les trois RBAC rules (`registerRoutePermission`) et les routes `/status`, `/start`, `/stop`, `/restart`.
+
+Rien de Discord ne tourne avant `onEnable`, et `onDisable` est garanti d'être appelé avant le déchargement. Pas d'action requise côté admin pour récupérer un état propre après un toggle off/on.
+
 ## Développement
 
 ```bash
@@ -175,6 +185,14 @@ npm run typecheck   # tsc --noEmit
 ```
 
 `build.js` détecte `--watch` et bascule esbuild en mode incrémental. Les changements TS / TSX recompilent en quelques ms.
+
+## CI / Release
+
+- `.github/workflows/ci.yml` : sur chaque PR vers `main`, lance `npm ci`, le syntax check Node, `npm run typecheck`, `npm run build` et vérifie la présence de `dist/index.js` + `dist/frontend/index.{js,css}`.
+- `.github/workflows/release.yml` : sur chaque tag `v*` (ou `workflow_dispatch`), lance Qodana (non bloquant), build, et publie une GitHub Release avec la tarball `leonarr-x.y.z.tar.gz` (manifest + `dist/` + `package.json` + `package-lock.json` + README + LICENSE) + son `.sha256`. C'est cette URL d'asset que vous collez dans **Install from URL** côté admin Oscarr.
+- `.github/workflows/codeql.yml` : CodeQL JS/TS + Actions, push sur `main`, PR, et planifié hebdomadaire.
+
+Plus de pipeline Docker ni de push GHCR : Leonarr se distribue uniquement comme tarball de plugin, conformément au flow décrit dans `docs/plugins.md` côté Oscarr.
 
 ## Limitations connues
 

@@ -1,7 +1,7 @@
 {
   "id": "leonarr",
   "name": "Leonarr",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "apiVersion": "v1",
   "description": "Discord bridge for Oscarr — link your Discord account, search TMDB and submit requests via slash commands, get DMed when your media is ready.",
   "author": "Keda",
@@ -23,18 +23,18 @@
     "permissions"
   ],
   "capabilityReasons": {
-    "settings:plugin": "Stores the bot token, Discord client id, optional guild scoping and the HMAC secret used to sign Discord OAuth state.",
-    "settings:app":    "Reads the instance language so command replies and TMDB metadata match the admin's locale.",
-    "users:read":      "Resolves the Oscarr user linked to a Discord id (via findUserByProvider) before every command.",
+    "settings:plugin": "Stores the bot token, Discord client id, optional guild scoping and the announce channel id.",
+    "settings:app":    "Reads AppSettings.siteUrl to build the canonical OAuth deep link sent by /link.",
+    "users:read":      "Resolves the Oscarr user linked to a Discord id (via findUserByProvider) before every command, and lists their providers when DMing notifications.",
     "tmdb:read":       "/search autocomplete queries TMDB through Oscarr's cached proxy — no plugin-side API key required.",
     "requests:read":   "/status reads the user's requests and batched media progress to show queue info.",
     "requests:write":  "/search → submit creates a request as the linked Oscarr user, through the exact pipeline POST /api/requests uses.",
     "events":          "Subscribes to user.notification.created + media.available so DMs and channel posts fire without cron polling.",
-    "permissions":     "Registers the 'leonarr.restart' permission + RBAC rule for POST /api/plugins/leonarr/restart so only admins (or roles explicitly granted) can bounce the Discord bot."
+    "permissions":     "Registers the 'leonarr.control' permission + RBAC rules for POST /api/plugins/leonarr/{start,stop,restart} so only admins (or roles explicitly granted) can drive the Discord bot."
   },
   "settings": [
-    { "key": "botToken", "label": "Discord bot token", "type": "password" },
-    { "key": "clientId", "label": "Discord application (client) id", "type": "string" },
+    { "key": "botToken", "label": "Discord bot token", "type": "password", "required": true },
+    { "key": "clientId", "label": "Discord application (client) id", "type": "string", "required": true },
     { "key": "guildId", "label": "Guild id to scope slash commands (empty = register globally)", "type": "string" },
     { "key": "announceChannelId", "label": "Channel id for media.available broadcasts (empty = DM only)", "type": "string" }
   ],

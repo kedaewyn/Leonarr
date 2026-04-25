@@ -16,7 +16,7 @@ import type { Ctx, PluginRegistration } from './types.js';
  *    POST /stop    → stop the bot if running
  *    POST /restart → stop + start, pick up setting changes
  *
- *  All mutating routes gated by the `leonarr.restart` plugin permission.
+ *  All mutating routes gated by the `leonarr.control` plugin permission.
  */
 
 /** Settings the bot considers mandatory before it can log in. Checked by /status so the
@@ -39,6 +39,14 @@ export function register(_ctx: Ctx): PluginRegistration {
   return {
     manifest,
 
+    async onInstall(ctx: Ctx) {
+      // Fires exactly once, the first time Oscarr loads the plugin (DB-flagged via
+      // PluginState.onInstallRan). Use it to surface the "next step" guidance to the
+      // admin reading the plugin logs page — the bot itself stays stopped until the
+      // settings are filled and Start is hit.
+      ctx.log.info('Leonarr installed — fill the settings in Admin → Plugins → Leonarr, then click Start.');
+    },
+
     async onEnable(ctx: Ctx) {
       ctx.log.info('Leonarr onEnable — starting Discord bot');
       await bot.start(ctx);
@@ -53,10 +61,10 @@ export function register(_ctx: Ctx): PluginRegistration {
       // Admin-only bot control (reconnects Discord gateway + re-registers slash commands
       // against current settings). Registered as a plugin permission so the admin can
       // grant it to non-admin roles later if they want a "bot operator" role.
-      ctx.registerPluginPermission('leonarr.restart', 'Start / stop / restart the Leonarr Discord bot');
-      ctx.registerRoutePermission('POST:/api/plugins/leonarr/start',   { permission: 'leonarr.restart' });
-      ctx.registerRoutePermission('POST:/api/plugins/leonarr/stop',    { permission: 'leonarr.restart' });
-      ctx.registerRoutePermission('POST:/api/plugins/leonarr/restart', { permission: 'leonarr.restart' });
+      ctx.registerPluginPermission('leonarr.control', 'Start, stop or restart the Leonarr Discord bot');
+      ctx.registerRoutePermission('POST:/api/plugins/leonarr/start',   { permission: 'leonarr.control' });
+      ctx.registerRoutePermission('POST:/api/plugins/leonarr/stop',    { permission: 'leonarr.control' });
+      ctx.registerRoutePermission('POST:/api/plugins/leonarr/restart', { permission: 'leonarr.control' });
 
       app.get('/status', async () => {
         const { configured, missing } = await inspectSettings(ctx);

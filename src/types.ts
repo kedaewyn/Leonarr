@@ -205,6 +205,7 @@ export interface Ctx {
 
 export interface PluginRegistration {
   manifest: unknown;
+  onInstall?(ctx: Ctx): Promise<void> | void;
   onEnable?(ctx: Ctx): Promise<void> | void;
   onDisable?(ctx: Ctx): Promise<void> | void;
   registerRoutes?(app: FastifyInstance, ctx: Ctx): Promise<void> | void;
