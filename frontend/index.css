@@ -1,0 +1,4 @@
+/* Tailwind utilities compiled into the plugin's own CSS bundle. Core ships base + components.
+ * Oscarr's plugin loader auto-injects <link rel="stylesheet" href="/api/plugins/leonarr/frontend/index.css">
+ * the first time any component from this plugin mounts — no manual import needed on our side. */
+@tailwind utilities;

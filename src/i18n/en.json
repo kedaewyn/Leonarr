@@ -1,0 +1,45 @@
+{
+  "cmd.link.description": "Link your Discord account to your Oscarr account.",
+  "cmd.search.description": "Search for a movie or TV show and submit a request.",
+  "cmd.search.query": "What are you looking for?",
+  "cmd.status.description": "See your pending Oscarr requests and download progress.",
+  "cmd.help.description": "Show the list of Leonarr commands.",
+
+  "link.prompt": "Click the link below to connect your Discord account to Oscarr. The link is personal and expires in 10 minutes.",
+  "link.button": "Link my account",
+  "link.already": "Your Discord account is already linked to Oscarr ({{name}}).",
+  "link.misconfigured": "Leonarr can't build the link yet — the admin needs to set the public site URL in Oscarr's general settings.",
+
+  "not_linked": "Your Discord account isn't linked yet. Run /link first.",
+
+  "search.autocomplete.hint": "Start typing at least 2 characters…",
+  "search.submit.title": "Submit this request?",
+  "search.submit.title.available": "Already in your library.",
+  "search.submit.title.requested": "You already have an active request for this.",
+  "search.submit.confirm": "Request",
+  "search.result.none": "No result for **{{query}}**.",
+
+  "request.created.pending": "Requested **{{title}}** — your admin will review it.",
+  "request.created.approved": "Requested **{{title}}** — auto-approved, sending to the service now.",
+  "request.created.send_failed": "Requested **{{title}}** — the request was saved but Oscarr couldn't reach the *arr service. An admin will retry.",
+  "request.error.duplicate": "You already have an active request for **{{title}}**.",
+  "request.error.blacklisted": "**{{title}}** has been blocked by an administrator.",
+  "request.error.blocked_by_guard": "Your request was blocked: {{reason}}",
+  "request.error.invalid": "Something is wrong with that request: {{reason}}",
+  "request.error.quality": "You don't have access to the selected quality profile.",
+  "request.error.generic": "Something went wrong ({{code}}). Try again in a minute.",
+
+  "status.empty": "You don't have any Oscarr requests yet.",
+  "status.heading": "Your latest requests",
+  "status.status.pending": "Pending",
+  "status.status.approved": "Approved",
+  "status.status.searching": "Searching",
+  "status.status.processing": "Processing",
+  "status.status.available": "Available",
+  "status.status.failed": "Failed",
+  "status.status.rejected": "Rejected",
+  "status.queue.progress": "{{percent}}% — {{state}}",
+
+  "help.title": "Leonarr commands",
+  "help.footer": "Oscarr is watching. Also, please be patient with the robot."
+}

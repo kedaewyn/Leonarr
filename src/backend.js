@@ -6,13 +6,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function resolveBackendBase() {
   const candidates = [
-    // cwd IS the backend dir (e.g. packages/backend/)
-    path.resolve(process.cwd(), 'src'),
-    path.resolve(process.cwd(), 'dist'),
-    // cwd is the app root (e.g. /app/)
-    path.resolve(process.cwd(), 'packages/backend/src'),
-    path.resolve(process.cwd(), 'packages/backend/dist'),
-    // Relative to plugin location (when inside monorepo directly)
     path.resolve(__dirname, '../../../backend/src'),
     path.resolve(__dirname, '../../../backend/dist'),
     path.resolve(__dirname, '../../../../backend/src'),
