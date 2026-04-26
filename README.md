@@ -55,7 +55,7 @@ ln -s /opt/leonarr /chemin/vers/Oscarr/packages/plugins/leonarr
 
 En prod, deux options :
 
-- **Install from URL** depuis l'admin Oscarr (Admin → Plugins → Install from URL) : collez l'URL de la tarball publiée par le workflow `release.yml` (asset GitHub Release `leonarr-x.y.z.tar.gz`). Oscarr télécharge, valide le manifest, dépose le contenu dans `packages/plugins/leonarr/` et hot-load le plugin sans redémarrer le conteneur.
+- **Install from URL** depuis l'admin Oscarr (Admin → Plugins → Install from URL) : collez l'URL de la tarball publiée par le workflow `release.yml`. Le résolveur Oscarr lit la dernière release, repère l'asset dont le nom contient le token arch du container qui tourne (`leonarr-x.y.z-linux-amd64.tar.gz` ou `leonarr-x.y.z-linux-arm64.tar.gz`) et le télécharge. Vous pouvez aussi pointer directement sur l'asset arch que vous voulez. Oscarr valide le manifest, dépose le contenu dans `packages/plugins/leonarr/` et hot-load le plugin sans redémarrer le conteneur.
 - Installation manuelle : décompressez la tarball dans le dossier scanné par Oscarr, ou clonez ce repo et lancez `npm run build` localement, puis redémarrez le service une fois pour que le plugin engine découvre le plugin.
 
 ### 3. Relancer Oscarr
@@ -189,10 +189,41 @@ npm run typecheck   # tsc --noEmit
 ## CI / Release
 
 - `.github/workflows/ci.yml` : sur chaque PR vers `main`, lance `npm ci`, le syntax check Node, `npm run typecheck`, `npm run build` et vérifie la présence de `dist/index.js` + `dist/frontend/index.{js,css}`.
-- `.github/workflows/release.yml` : sur chaque tag `v*` (ou `workflow_dispatch`), lance Qodana (non bloquant), build, et publie une GitHub Release avec la tarball `leonarr-x.y.z.tar.gz` (manifest + `dist/` + `package.json` + `package-lock.json` + README + LICENSE) + son `.sha256`. C'est cette URL d'asset que vous collez dans **Install from URL** côté admin Oscarr.
+- `.github/workflows/release.yml` : sur chaque tag `v*` (ou `workflow_dispatch`), lance Qodana (non bloquant), build **deux tarballs par arch** (amd64 + arm64) et publie une GitHub Release avec les deux assets + leurs `.sha256`. Voir la section suivante pour pourquoi deux assets.
 - `.github/workflows/codeql.yml` : CodeQL JS/TS + Actions, push sur `main`, PR, et planifié hebdomadaire.
 
 Plus de pipeline Docker ni de push GHCR : Leonarr se distribue uniquement comme tarball de plugin, conformément au flow décrit dans `docs/plugins.md` côté Oscarr.
+
+### Assets per-arch
+
+Le release publie deux tarballs nommés selon le pattern attendu par le résolveur Oscarr (`packages/backend/src/plugins/routes.ts` → `ARCH_TOKENS`) :
+
+- `leonarr-x.y.z-linux-amd64.tar.gz` — pour les containers x86_64 (`process.arch === 'x64'`).
+- `leonarr-x.y.z-linux-arm64.tar.gz` — pour les containers ARM64 (`process.arch === 'arm64'`).
+
+Chaque tarball contient `manifest.json`, `package.json`, `package-lock.json`, `README.md`, `LICENSE`, `dist/` **et `node_modules/` prebuildé pour l'arch cible**. Pourquoi `node_modules` dans le tarball : l'image prod d'Oscarr strippe `npm`/`npx`/`corepack` (Dockerfile), donc `npm install` ne tourne pas après l'extraction. Tout ce que `dist/index.js` importe au runtime — au premier rang `discord.js` qui reste externe au bundle esbuild — doit déjà être dans l'asset.
+
+`discord.js` tire trois optional deps natives : `zlib-sync` (compression du gateway), `bufferutil` et `utf-8-validate` (perf des frames WebSocket). `zlib-sync` se compile via node-gyp à l'install ; les deux autres ont des prebuilds pour les arches usuelles. Buildées sur le runner amd64, elles ne marchent pas en arm64 et inversement — d'où la matrix.
+
+Côté résolveur Oscarr (`resolveInstallUrlFromRepo`) : pour chaque install/update, il lit la latest release, filtre les `*.tar.gz`, et choisit dans cet ordre — (1) asset dont le nom contient un token matchant `process.arch` du container qui tourne, (2) asset sans aucun token arch (universel), (3) fallback sur le tarball source de HEAD. Notre release ne ship que (1) ; (2) n'existe pas. Si Oscarr tourne sur une arch hors amd64/arm64, l'install retombera sur le tarball source — qui ne contient pas `dist/` ni `node_modules`, donc ne marchera pas. Aujourd'hui Oscarr ne supporte officiellement que ces deux arches, le risque est nul.
+
+### Builder localement pour une arch précise
+
+Si vous voulez reproduire un asset hors CI :
+
+```bash
+npm ci --no-audit --no-fund     # installe + compile zlib-sync pour votre arch
+npm run typecheck
+npm run build
+rm -rf node_modules
+npm ci --omit=dev --no-audit --no-fund   # production tree only
+ARCH=$(node -e 'console.log(process.arch === "x64" ? "amd64" : process.arch)')
+VERSION=$(node -p "require('./package.json').version")
+tar -czf "leonarr-${VERSION}-linux-${ARCH}.tar.gz" \
+  manifest.json package.json package-lock.json README.md LICENSE* dist/ node_modules/
+```
+
+Le tarball produit est strictement équivalent à celui de la CI, à condition d'être sur la bonne arch (x86_64 → `amd64`, aarch64 → `arm64`).
 
 ## Limitations connues
 
