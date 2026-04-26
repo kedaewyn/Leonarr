@@ -1,9 +1,20 @@
 name: Release
 
-# Builds the plugin and attaches a tarball to the GitHub release on every v*
-# tag. Admins install via Oscarr → Admin → Plugins → "Install from URL" with
-# the asset URL — no Docker image, no GHCR, no container restart needed
-# (see https://github.com/arediss/Oscarr/blob/main/docs/plugins.md).
+# Builds the plugin per-arch (amd64 + arm64) and attaches one tarball per arch
+# to the GitHub release on every v* tag. Oscarr's plugin resolver picks the
+# tarball matching the running container's process.arch — see ARCH_TOKENS in
+# packages/backend/src/plugins/routes.ts on the Oscarr side.
+#
+# Why per-arch: discord.js's optional native deps (zlib-sync for gateway gzip,
+# bufferutil/utf-8-validate for ws) are prebuilt at `npm ci` time against the
+# host arch. Shipping a single bundle would either embed amd64 binaries on an
+# arm64 container (broken) or skip them entirely (no native acceleration).
+# Oscarr's prod image strips npm/npx/corepack, so node_modules MUST land in the
+# tarball already-prebuilt for the target arch.
+#
+# Asset name pattern matches Oscarr's resolver:
+#   leonarr-X.Y.Z-linux-amd64.tar.gz   (process.arch === 'x64')
+#   leonarr-X.Y.Z-linux-arm64.tar.gz   (process.arch === 'arm64')
 
 on:
   push:
@@ -45,11 +56,19 @@ jobs:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
           category: qodana
 
-  # ─── 2. Build + attach release tarball ─────────────────────────────
-  release:
-    name: Build & publish release tarball
+  # ─── 2. Build per-arch tarballs ────────────────────────────────────
+  build:
+    name: Build ${{ matrix.arch }} tarball
     needs: qodana
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest        # GitHub-hosted x86_64
+            arch: amd64
+          - runner: ubuntu-24.04-arm     # GitHub-hosted ARM64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +77,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install deps
+      # Full install (incl. devDependencies) so we can typecheck + build.
+      # `--no-audit --no-fund` keeps the log clean. Native optional deps
+      # (zlib-sync, bufferutil, utf-8-validate via discord.js) get prebuilt
+      # against the matrix arch here — that's the whole point of the matrix.
+      - name: Install deps (with dev)
         run: npm ci --no-audit --no-fund
 
       - name: Typecheck
@@ -67,28 +90,57 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Pack only what Oscarr's plugin engine needs to load the plugin:
-      # manifest, the compiled bundle, and package.json (for `discord.js`
-      # which is kept external — Oscarr resolves it from node_modules at
-      # plugin install time). frontend/ sources stay out, the compiled
-      # output is already in dist/frontend/.
+      # Re-install runtime-only deps into a fresh node_modules so the asset
+      # ships exactly the production tree (no esbuild/typescript/react/etc.).
+      # This MUST run on the matrix runner so the prebuilt binaries inside
+      # node_modules/discord.js/node_modules/zlib-sync/* match the target arch.
+      - name: Reinstall production deps for packing
+        run: |
+          rm -rf node_modules
+          npm ci --omit=dev --no-audit --no-fund
+
       - name: Pack tarball
         run: |
           version="${GITHUB_REF_NAME#v}"
-          tar -czf "leonarr-${version}.tar.gz" \
+          asset="leonarr-${version}-linux-${{ matrix.arch }}.tar.gz"
+          tar -czf "${asset}" \
             manifest.json \
             package.json \
             package-lock.json \
             README.md \
             LICENSE* \
-            dist/
-          ls -lh "leonarr-${version}.tar.gz"
-          sha256sum "leonarr-${version}.tar.gz" > "leonarr-${version}.tar.gz.sha256"
+            dist/ \
+            node_modules/
+          ls -lh "${asset}"
+          sha256sum "${asset}" > "${asset}.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: leonarr-${{ matrix.arch }}
+          path: |
+            leonarr-*-linux-${{ matrix.arch }}.tar.gz
+            leonarr-*-linux-${{ matrix.arch }}.tar.gz.sha256
+          retention-days: 1
+          if-no-files-found: error
+
+  # ─── 3. Publish release with both arch assets ──────────────────────
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List collected assets
+        run: ls -lh dist/
 
       - name: Create GitHub release
         uses: ncipollo/release-action@2c591bcc8ecdcd2db72b97d6147f871fcd833ba5 # v1.14.0
         with:
-          artifacts: "leonarr-*.tar.gz,leonarr-*.tar.gz.sha256"
+          artifacts: "dist/leonarr-*.tar.gz,dist/leonarr-*.tar.gz.sha256"
           generateReleaseNotes: true
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}

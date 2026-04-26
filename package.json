@@ -1,6 +1,6 @@
 {
   "name": "leonarr",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "Oscarr plugin: Discord bridge for search + requests + notifications.",
@@ -13,6 +13,11 @@
   "dependencies": {
     "discord.js": "^14.18.0",
     "lucide-react": "^0.468.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.4",
+    "zlib-sync": "^0.1.9"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

@@ -1,7 +1,7 @@
 {
   "id": "leonarr",
   "name": "Leonarr",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "apiVersion": "v1",
   "description": "Discord bridge for Oscarr — link your Discord account, search TMDB and submit requests via slash commands, get DMed when your media is ready.",
   "author": "Keda",
